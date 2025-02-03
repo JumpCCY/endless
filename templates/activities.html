@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Activities</title>
+</head>
+<header>
+    <h1>Activities.html</h1>
+</header>
+<body>
+<table>
+    <thead>
+    <th>Status</th>
+    <th>Item</th>
+    <th>Size</th>
+    <th>Version</th>
+    <th>Customer name</th>
+    <th>Address</th>
+    <th>Phone number</th>
+    <th>Date</th>
+    </thead>
+    <tbody>
+    {% for activity in activities %}
+    <tr>
+        <td>{{ activity.status }}</td>
+        <td>{{ activity.item }}</td>
+        <td>{{ activity.size }}</td>
+        <td>{{ activity.version }}</td>
+        <td>{{ activity.customer_name }}</td>
+        <td>{{ activity.address }}</td>
+        <td>{{ activity.phone_number }}</td>
+        <td>{{ activity.date }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+<footer>
+    <br>
+    <a href="/stocks">Back</a>
+</footer>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit items</title>
+</head>
+<header>
+    <h1>edit items.html</h1> <a href="/">home</a>
+</header>
+<body>
+<h2>Add new collection</h2>
+<form action="/edit_item" method="post">
+    <input type="text" name="item_name" placeholder="Item name">
+    <input type="text" name="version" placeholder="Item version">
+    <input type="number" name="price" placeholder="Item price">
+    <button type="submit" name="action" value="add">Add</button>
+</form>
+<br>
+<h2>Current Collection</h2>
+{% if not item %}
+    <p>No items found</p>
+{% else %}
+    <table>
+        <thead>
+        <th>Item</th>
+        <th>Version</th>
+        <th>Price</th>
+        <th>Actions</th>
+        </thead>
+    <tbody>
+        {% for item in item %}
+            <tr>
+                <td>{{ item.Item }}</td>
+                <td>{{ item.Version }}</td>
+                <td>{{ item.Price }}</td>
+                <td>
+                    <form action="/edit_item" method="post">
+                        <input type="hidden" name="item_id" value="{{ item.ID }}">
+                        <button type="submit" name="action" value="remove">Remove</button>
+                    </form>
+                    <button onclick="stockCheck({{ item.ID|tojson }})" id="stock_edit">Stocks</button>
+                </td>
+            </tr>
+            <tr id="stock_table_row_{{ item.ID }}" style="display:none;">
+                <td id="json_data_call {{ item.ID }}">
+
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+</body>
+<script>
+    function stockCheck(item_id) {
+        const table = document.getElementById(`stock_table_row_${item_id}`);
+        if (table.style.display === "none" || table.style.display === "") {
+            fetch(`/stock_check?item_id=${item_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    createTable(data, item_id)
+                    table.style.display = "table-row";
+                })
+                .catch(error => console.error(`Error catching data`, error));
+        } else {
+            // so if the table is set to table-row to make it visible after clicking it again it will make it to non which is un toggle
+            removeTable(item_id)
+            table.style.display = "none";
+        }
+    }
+
+    function createTable(data, item_id) {
+
+        const table = document.getElementById(`json_data_call ${item_id}`);
+
+
+        const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+        let i = 0;
+        data.forEach(row => {
+
+            const tr = document.createElement("tr");
+            const td0 = document.createElement("td");
+            const td1 = document.createElement("td");
+            const td2 = document.createElement("td");
+            const td3 = document.createElement("td");
+            const form = document.createElement("form");
+            const input = document.createElement("input");
+            const add = document.createElement("button");
+            const remove = document.createElement("button");
+            const tdarr = document.createElement("td");
+            td0.textContent = `....`;
+            td1.textContent = `Size ${sizes[i]}`;
+            tdarr.textContent = `->`;
+            td2.textContent = `   ${row.quantity}`;
+            
+            form.method = "POST";
+
+            input.type = "number";
+            input.placeholder = "quantity";
+            input.id = `${i + 1} `;
+
+            add.innerText = `add`;
+            remove.innerText = `remove`;
+
+            form.appendChild(input);
+            form.appendChild(add);
+            form.appendChild(remove);
+
+            td3.appendChild(form);
+
+            tr.appendChild(td0);
+            tr.appendChild(td1);
+            tr.appendChild(tdarr);
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+
+            table.appendChild(tr);
+
+            i++;
+        });
+    }
+
+    function removeTable(item_id) {
+        const table = document.getElementById(`json_data_call ${item_id}`);
+        table.innerHTML = "";
+    }
+
+</script>
+</html>
+
+<!--        <input type="number" name="quantity" placeholder="Item quantity">
+        <select name="size">
+            <option selected="selected" value="">size</option>
+            <option value="XXS">XS</option>
+            <option value="XS">XS</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+            <option value="XXL">XXL</option>
+            <option value="ALL">SELECT ALL</option>
+        </select>
+-->

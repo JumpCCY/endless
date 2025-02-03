@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<header>
+    <h1>stocks.html</h1>
+</header>
+<body>
+<a href="/edit_item">Edit items</a>
+<a href="/activities">Activities</a>
+
+<h2>Add txn</h2>
+<form method="POST" action="">
+    <table>
+        <thead>
+        <th>Item name</th>
+        <th>Size</th>
+        <th>Version</th>
+        <th>Customer name</th>
+        <th>Address</th>
+        <th>Phone no.</th>
+        </thead>
+
+        <tbody>
+        <tr>
+            <td>
+                <select name="item_name" required>
+                    <option selected="selected" value="">Select an item</option>
+                    {% for item in items %}
+                        <option value="{{ item.Item }}">{{ item.Item }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select name="size" required>
+                    <option selected="selected" value="">Select the size</option>
+                    {% for size in stocks %}
+                        <option value="{{ size }}">{{ size }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select name="version" required>
+                    <option selected="selected" value="">Select the version</option>
+                    {% for version in items %}
+                        <option value="{{ version.Version }}">{{ version.Version }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <input type="text" name="customer_name" placeholder="customer name" required>
+            </td>
+            <td>
+                <input type="text" name="address" placeholder="address" required>
+            </td>
+            <td>
+                <input type="number" name="phone_no" placeholder="phone no." required>
+            </td>
+        </tr>
+        </tbody>
+
+    </table>
+<br>
+ <button type="submit">Submit</button>
+</form>
+<br>
+<h2>Pending</h2>
+{% if not activities %}
+<p>No pending order</p>
+{% else %}
+<table>
+    <thead>
+    <th>Status</th>
+    <th>Item</th>
+    <th>Size</th>
+    <th>Version</th>
+    <th>Customer name</th>
+    <th>Address</th>
+    <th>Phone number</th>
+    <th>Date</th>
+    <th>EDIT</th>
+    </thead>
+    <tbody>
+    {% for pending in pending %}
+        <tr>
+            <td>{{ pending.status }}</td>
+            <td>{{ pending.item }}</td>
+            <td>{{ pending.size }}</td>
+            <td>{{ pending.version }}</td>
+            <td>{{ pending.customer }}</td>
+            <td>{{ pending.address }}</td>
+            <td>{{ pending.phone_number }}</td>
+            <td>{{ pending.date }}</td>
+            <td><a href="/edit/{{ stock.id }}">Edit</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+</body>
+</html>
