@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def hello_world():  # put application's code here
+def hello_world():
     return render_template('testmenu.html')
 
 
@@ -55,14 +55,20 @@ def edit_items():
         item_name = request.form.get("item_name")
         version = request.form.get("version")
         price = request.form.get("price")
-        price = int(price)
+
 
         # check of fake inputs
         if not item_name or not version or not price:
             return render_template('edit_items.html', message="Please fill out all the fields")
 
+        price = int(price)
+
         if price < 0:
             return render_template('edit_items.html', message="Price should be positive")
+
+        check_name = db.execute("SELECT Item FROM items WHERE Item = ?", (item_name,)).fetchone()
+        if item_name==check_name[0]:
+            return render_template('edit_items.html', message="Name already taken")
 
         db.execute("INSERT INTO items(Item, Version, Price) VALUES(?,?,?)", (item_name, version, price,))
         item_id = db.lastrowid
@@ -82,9 +88,10 @@ def edit_items():
         con.commit()
 
     items = db.execute("SELECT * FROM items").fetchall()
+    size = db.execute("SELECT * FROM sizes").fetchall()
 
     con.close()
-    return render_template('edit_items.html', item=items)
+    return render_template('edit_items.html', item=items, size=size)
 
 @app.route('/stock_check', methods=['GET'])
 def stock_check():
@@ -97,6 +104,61 @@ def stock_check():
     rows = db.execute("SELECT item_id, size_id, Quantity FROM size_and_stocks WHERE item_id = ? ORDER BY size_id", (id_request,)).fetchall()
     data = [{"item_id": row[0] , "size_id": row[1] , "quantity": row[2]} for row in rows]
     return jsonify(data)
+
+@app.route('/add_specific_size_quantity', methods=['GET'])
+def add_specific_size_quantity():
+
+    size_id = request.args.get("size_id")
+    item_id = request.args.get("item_id")
+    adjustAmount = request.args.get("quantity")
+
+    return update_stock(size_id, item_id, adjustAmount, True)
+
+@app.route('/remove_specific_size_quantity', methods=['GET'])
+def remove_specific_size_quantity():
+
+
+    size_id = request.args.get("size_id")
+    item_id = request.args.get("item_id")
+    adjustAmount = request.args.get("quantity")
+
+    return update_stock(size_id, item_id, adjustAmount, False)
+
+
+
+def update_stock(size_id, item_id, adjustAmount, is_addition = True):
+    con = sqlite3.connect("endless.db")
+    con.row_factory = sqlite3.Row
+    db = con.cursor()
+
+    if adjustAmount is None:
+        return jsonify({"error": "Missing quantity"}), 400  # HTTP 400 for bad request
+
+    try:
+        adjustAmount = int(adjustAmount)
+    except ValueError:
+        return jsonify({"error": "Invalid quantity format"}), 400
+
+    if adjustAmount <= 0:
+        return jsonify({"error": "Invalid quantity format"}), 400
+
+    currentQuantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?", (size_id, item_id)).fetchone()
+
+    if is_addition:
+        newQuantity = currentQuantity[0] + adjustAmount
+    else:
+        if currentQuantity[0] < adjustAmount:
+            return jsonify({"error": "Not enough stock to remove"}), 400
+        newQuantity = currentQuantity[0] - adjustAmount
+
+
+    db.execute("UPDATE size_and_stocks SET Quantity = ? WHERE size_id = ? AND item_id = ?", (newQuantity,size_id,item_id))
+    con.commit()
+
+    Quantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?", (size_id, item_id)).fetchone()
+    con.close()
+    return str(Quantity[0])
+
 
 if __name__ == '__main__':
     app.run()
