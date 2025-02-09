@@ -6,6 +6,15 @@
 </head>
 
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>
+                {% for message in messages %}
+                    alert("{{ message }}");
+                {% endfor %}
+            </script>
+        {% endif %}
+    {% endwith %}
 <header>
     <h1>edit items.html</h1> <a href="/">home</a>
 </header>

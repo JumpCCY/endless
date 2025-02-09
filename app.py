@@ -1,9 +1,13 @@
 from unittest.mock import DEFAULT
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, flash
 import sqlite3
+import secrets
 
 app = Flask(__name__)
+
+secret_key = secrets.token_hex(16)
+app.secret_key = secret_key
 
 
 @app.route('/')
@@ -56,19 +60,34 @@ def edit_items():
         version = request.form.get("version")
         price = request.form.get("price")
 
+        items = db.execute("SELECT * FROM items").fetchall()
+        size = db.execute("SELECT * FROM sizes").fetchall()
+
 
         # check of fake inputs
         if not item_name or not version or not price:
-            return render_template('edit_items.html', message="Please fill out all the fields")
+            flash('Please fill out all the fields')
+            return render_template('edit_items.html', item=items, size=size)
 
         price = int(price)
 
         if price < 0:
-            return render_template('edit_items.html', message="Price should be positive")
+            flash('Please enter the valid number')
+            return render_template('edit_items.html', item=items, size=size)
 
         check_name = db.execute("SELECT Item FROM items WHERE Item = ?", (item_name,)).fetchone()
-        if item_name==check_name[0]:
-            return render_template('edit_items.html', message="Name already taken")
+        if check_name:
+            check_version = db.execute("SELECT Version FROM items WHERE Item = ?", (check_name[0],)).fetchone()
+
+            if not check_version:
+                flash('Error, Version does not exist')
+                return render_template('edit_items.html', item=items, size=size)
+
+            if item_name == check_name[0] and version == check_version[0]:
+                flash('Name already taken')
+                return render_template('edit_items.html', item=items, size=size)
+
+
 
         db.execute("INSERT INTO items(Item, Version, Price) VALUES(?,?,?)", (item_name, version, price,))
         item_id = db.lastrowid
