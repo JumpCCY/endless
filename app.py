@@ -1,6 +1,6 @@
 from unittest.mock import DEFAULT
 
-from flask import Flask, render_template, request, jsonify, flash
+from flask import Flask, render_template, request, jsonify, flash, session, redirect, url_for
 import sqlite3
 import secrets
 
@@ -77,15 +77,14 @@ def edit_items():
 
         check_name = db.execute("SELECT Item FROM items WHERE Item = ?", (item_name,)).fetchone()
         if check_name:
-            check_version = db.execute("SELECT Version FROM items WHERE Item = ?", (check_name[0],)).fetchone()
+            check_version = db.execute("SELECT Version FROM items WHERE Version = ?", (version,)).fetchone()
 
             if not check_version:
-                flash('Error, Version does not exist')
-                return render_template('edit_items.html', item=items, size=size)
+                check_version = 'no'
 
             if item_name == check_name[0] and version == check_version[0]:
                 flash('Name already taken')
-                return render_template('edit_items.html', item=items, size=size)
+                return redirect(url_for('edit_items'))
 
 
 
@@ -106,7 +105,7 @@ def edit_items():
         db.execute("DELETE FROM size_and_stocks WHERE item_id = ?", item_id)
         con.commit()
 
-    items = db.execute("SELECT * FROM items").fetchall()
+    items = db.execute("SELECT * FROM items ORDER BY Version").fetchall()
     size = db.execute("SELECT * FROM sizes").fetchall()
 
     con.close()

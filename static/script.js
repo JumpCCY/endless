@@ -81,3 +81,17 @@ function remove(item_id, size_id) {
         console.error("Error: ", error);
     })
 }
+
+function editPrice(item_id, price) {
+    const element = document.getElementById(`price_${item_id}`);
+    const edit_button = document.getElementById(`edit_price_button_${item_id}`);
+
+    if (edit_button.innerHTML === `Cancel`) {
+        element.innerHTML = price;
+        edit_button.innerHTML = `Edit price`;
+    } else {
+        edit_button.innerHTML = `Cancel`;
+        element.innerHTML = `<input type="text" id="editInput_${item_id}" value="" placeholder="New price">`;
+
+    }
+}
