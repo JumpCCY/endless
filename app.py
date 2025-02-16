@@ -178,6 +178,42 @@ def update_stock(size_id, item_id, adjustAmount, is_addition = True):
     return str(Quantity[0])
 
 
+@app.route('/change_price', methods=['GET'])
+def change_price():
+
+    item_id = request.args.get("item_id")
+    price = request.args.get("price")
+    version = request.args.get("version")
+
+
+    if price is None or price == "":
+        return jsonify({"error": "Missing price"}), 400
+    if version is None or version == "":
+        return jsonify({"error": "Missing version"}), 400
+    if item_id is None or item_id == "":
+        return jsonify({"error": "Missing item_id"}), 400
+
+    try:
+        price = int(price)
+    except ValueError:
+        return jsonify({"error": "Invalid price"}), 400
+
+    if price < 0:
+        return jsonify({"error": "Invalid price"}), 400
+
+    con = sqlite3.connect("endless.db")
+    con.row_factory = sqlite3.Row
+    db = con.cursor()
+
+    db.execute("UPDATE items SET Price = ? WHERE Item = ? AND Version = ?", (price, item_id, version))
+    con.commit()
+    con.close()
+
+    return jsonify(1)
+
+
+
+
 if __name__ == '__main__':
     app.run()
 
