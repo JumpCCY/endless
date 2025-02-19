@@ -91,7 +91,7 @@ function editPriceButtonHandler(item_id, price, version) {
         edit_button.innerHTML = `Edit price`;
     } else {
         edit_button.innerHTML = `Cancel`;
-        element.innerHTML = `<input type="number" id="editInput_${item_id}_ver_${version}" value="" placeholder="New price"> <button type="button" onclick="editPrice(${item_id}, ${version})">Confirm</button>`;
+        element.innerHTML = `<input type="number" id="editInput_${item_id}_ver_${version}" value="" placeholder="New price" autofocus> <button type="button" onclick="editPrice(${item_id}, ${version})">Confirm</button>`;
 
     }
 }

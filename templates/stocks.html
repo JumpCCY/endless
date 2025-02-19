@@ -8,6 +8,7 @@
     <h1>stocks.html</h1>
 </header>
 <body>
+<a href="/">Home</a>
 <a href="/edit_item">Edit items</a>
 <a href="/activities">Activities</a>
 
@@ -36,8 +37,8 @@
             <td>
                 <select name="size" required>
                     <option selected="selected" value="">Select the size</option>
-                    {% for size in stocks %}
-                        <option value="{{ size }}">{{ size }}</option>
+                    {% for size in size %}
+                        <option value="{{ size }}">{{ size.Size }}</option>
                     {% endfor %}
                 </select>
             </td>

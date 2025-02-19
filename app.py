@@ -1,5 +1,6 @@
 from unittest.mock import DEFAULT
 
+import flask
 from flask import Flask, render_template, request, jsonify, flash, session, redirect, url_for
 import sqlite3
 import secrets
@@ -28,6 +29,7 @@ def stocks():
 
     name_and_version = db.execute("SELECT * FROM items ORDER BY Item").fetchall()
     activities = db.execute("SELECT * FROM activities").fetchall()
+    size = db.execute("SELECT Size FROM sizes").fetchall()
 
     size_and_stocks = db.execute("SELECT * FROM size_and_stocks")
     if request.method == 'POST':
@@ -46,7 +48,7 @@ def stocks():
 
         db.execute("INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber) VALUES(?,?,?,?,?,?)")
     else:
-        return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities)
+        return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities, size = size )
 
 
 @app.route('/edit_item', methods=['GET', 'POST'])
@@ -187,18 +189,23 @@ def change_price():
 
 
     if price is None or price == "":
+        flash("Invalid Value")
         return jsonify({"error": "Missing price"}), 400
     if version is None or version == "":
+        flash("Invalid Value")
         return jsonify({"error": "Missing version"}), 400
     if item_id is None or item_id == "":
+        flash("Invalid Value")
         return jsonify({"error": "Missing item_id"}), 400
 
     try:
         price = int(price)
     except ValueError:
+        flash("Invalid Value")
         return jsonify({"error": "Invalid price"}), 400
 
     if price < 0:
+        flash("Invalid Value")
         return jsonify({"error": "Invalid price"}), 400
 
     con = sqlite3.connect("endless.db")
