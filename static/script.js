@@ -105,14 +105,64 @@ function editPrice(item_id, version) {
             'Content-Type': 'application/json'
         }
     }).then(r => response => r.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        }
-        else{
-            location.reload();
-        }
-    }).catch(error => {
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                location.reload();
+            }
+        }).catch(error => {
         console.error("Error: ", error);
     })
 }
+
+let input = document.getElementById("INDEX")
+input.addEventListener("input", async function () {
+
+
+    try {
+        let response = await fetch(`/search?q=${input.value}`);
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        let data = await response.json();
+
+        let table = document.getElementById("table1");
+        let tableBody = document.getElementById("table-body");
+
+        table.innerHTML = "";
+
+        if (input.value === "") {
+            table.innerHTML = "";
+        } else {
+            // Create table header
+            let thead = document.createElement('thead');
+            let headerRow = document.createElement('tr');
+            headerRow.innerHTML = `
+        <th>Item</th>
+        <th>Version</th>
+        <th>Price</th>
+    `;
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Create table body
+            let tbody = document.createElement('tbody');
+            data.forEach(item => {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+            <td>${item.Item}</td>
+            <td>${item.Version}</td> 
+            <td>${item.Price}</td> 
+        `;
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+        }
+
+
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});

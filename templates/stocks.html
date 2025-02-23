@@ -12,6 +12,13 @@
 <a href="/edit_item">Edit items</a>
 <a href="/activities">Activities</a>
 
+<div>
+    <h2>Search item</h2>
+    <input type="search" placeholder="Search item..." id="INDEX">
+    <table id ="table1">
+    </table>
+</div>
+
 <h2>Add txn</h2>
 <form method="POST" action="">
     <table>
@@ -100,5 +107,6 @@
     </tbody>
 </table>
 {% endif %}
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

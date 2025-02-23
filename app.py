@@ -1,3 +1,4 @@
+from re import search
 from unittest.mock import DEFAULT
 
 import flask
@@ -218,6 +219,28 @@ def change_price():
 
     return jsonify(1)
 
+@app.route("/search")
+def search():
+
+    con = sqlite3.connect("endless.db")
+    con.row_factory = sqlite3.Row
+    db = con.cursor()
+
+    query = request.args.get("q")
+    search_term = f"%{query}%"
+
+    # Modified query to handle both text and numeric searches
+    items = db.execute("""
+        SELECT Item, Version, Price 
+        FROM items 
+        WHERE Item LIKE ? COLLATE NOCASE 
+        OR Item = ?
+        OR CAST(Item AS TEXT) LIKE ? ORDER BY Version
+    """, (search_term, query, search_term)).fetchall()
+
+    items_list = [dict(item) for item in items]
+
+    return jsonify(items_list)
 
 
 
