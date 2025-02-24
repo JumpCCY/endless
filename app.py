@@ -33,13 +33,14 @@ def stocks():
     size = db.execute("SELECT Size FROM sizes").fetchall()
 
     size_and_stocks = db.execute("SELECT * FROM size_and_stocks")
-    if request.method == 'POST':
+    if request.method == 'POST' and 'submit_txn' in request.form:
         item_name = request.form.get("item_name")
         size = request.form.get("size")
         version = request.form.get("version")
         customer = request.form.get("customer_name")
         address = request.form.get("address")
         phone = request.form.get("phone_no")
+        phone = int(phone)
 
         if not item_name or not size or not version or not customer or not address or not phone:
             return render_template('stocks.html', message="Please fill out all the fields")
@@ -47,9 +48,26 @@ def stocks():
         if phone <= 0:
             return render_template('stocks.html', message="Please enter the valid number")
 
-        db.execute("INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber) VALUES(?,?,?,?,?,?)")
+        db.execute("INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date) VALUES(?,?,?,?,?,?,DATETIME('now'))", (item_name, size, version, customer, address, phone))
+        con.commit()
+        return redirect(url_for('stocks'))
+    elif request.method == 'POST' and 'ship' in request.form:
+
+        activity_id = request.form.get("txID")
+        db.execute("UPDATE activities SET Status=? WHERE ID=?", ("SHIPPED", activity_id))
+        con.commit()
+        return redirect(url_for('stocks'))
+
+    elif request.method == 'POST' and 'complete' in request.form:
+
+        activity_id = request.form.get("txID")
+        db.execute("UPDATE activities SET Status=? WHERE ID=?", ("COMPLETE", activity_id))
+        con.commit()
+        return redirect(url_for('stocks'))
+
     else:
-        return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities, size = size )
+        txn_query = db.execute("SELECT * FROM activities WHERE Status = ? OR Status = ?", ("ORDERED", "SHIPPED",)).fetchall()
+        return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities, size = size, txn_query=txn_query )
 
 
 @app.route('/edit_item', methods=['GET', 'POST'])

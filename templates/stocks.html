@@ -20,7 +20,7 @@
 </div>
 
 <h2>Add txn</h2>
-<form method="POST" action="">
+<form method="POST">
     <table>
         <thead>
         <th>Item name</th>
@@ -45,7 +45,7 @@
                 <select name="size" required>
                     <option selected="selected" value="">Select the size</option>
                     {% for size in size %}
-                        <option value="{{ size }}">{{ size.Size }}</option>
+                        <option value="{{ size.Size }}">{{ size.Size }}</option>
                     {% endfor %}
                 </select>
             </td>
@@ -71,11 +71,11 @@
 
     </table>
 <br>
- <button type="submit">Submit</button>
+ <button type="submit" name="submit_txn">Submit</button>
 </form>
 <br>
 <h2>Pending</h2>
-{% if not activities %}
+{% if not txn_query %}
 <p>No pending order</p>
 {% else %}
 <table>
@@ -91,17 +91,24 @@
     <th>EDIT</th>
     </thead>
     <tbody>
-    {% for pending in pending %}
+    {% for pending in txn_query %}
         <tr>
-            <td>{{ pending.status }}</td>
-            <td>{{ pending.item }}</td>
-            <td>{{ pending.size }}</td>
-            <td>{{ pending.version }}</td>
-            <td>{{ pending.customer }}</td>
-            <td>{{ pending.address }}</td>
-            <td>{{ pending.phone_number }}</td>
-            <td>{{ pending.date }}</td>
-            <td><a href="/edit/{{ stock.id }}">Edit</a></td>
+            <td>{{ pending.Status }}</td>
+            <td>{{ pending.Item }}</td>
+            <td>{{ pending.Size }}</td>
+            <td>{{ pending.Version }}</td>
+            <td>{{ pending.CustomerName }}</td>
+            <td>{{ pending.Address }}</td>
+            <td>{{ pending.PhoneNumber }}</td>
+            <td>{{ pending.Date }}</td>
+            <td><form method="POST">
+                <input type="hidden" name="txID" value="{{ pending.ID }}">
+                <button name="ship">Shipped ?</button>
+            </form>
+                <form method="POST">
+                <input type="hidden" name="txID" value="{{ pending.ID }}">
+                <button name="complete">Complete ?</button>
+            </form></td>
         </tr>
     {% endfor %}
     </tbody>
