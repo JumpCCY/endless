@@ -127,16 +127,26 @@ input.addEventListener("input", async function () {
             throw new Error('Network response was not ok');
         }
         let data = await response.json();
+        console.log(data)
 
-        let table = document.getElementById("table1");
-        let tableBody = document.getElementById("table-body");
 
-        table.innerHTML = "";
-
+let searchBox = document.getElementById("results");
         if (input.value === "") {
-            table.innerHTML = "";
-        } else {
+            searchBox.innerHTML = "";
+        }
+        else if (data.length < 1) {
+
+            searchBox.innerHTML = "";
+            let h3 = document.createElement("h3");
+
+            let text = document.createTextNode("Couldn't find the result");
+
+            h3.appendChild(text);
+            searchBox.appendChild(h3);
+        }
+        else {
             // Create table header
+            let table = document.createElement('table');
             let thead = document.createElement('thead');
             let headerRow = document.createElement('tr');
             headerRow.innerHTML = `
@@ -159,6 +169,7 @@ input.addEventListener("input", async function () {
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
+            searchBox.appendChild(table);
         }
 
 
@@ -166,3 +177,6 @@ input.addEventListener("input", async function () {
         console.error('Error:', error);
     }
 });
+
+
+

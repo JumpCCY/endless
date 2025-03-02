@@ -48,9 +48,24 @@ def stocks():
         if phone <= 0:
             return render_template('stocks.html', message="Please enter the valid number")
 
-        db.execute("INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date) VALUES(?,?,?,?,?,?,DATETIME('now'))", (item_name, size, version, customer, address, phone))
-        con.commit()
-        return redirect(url_for('stocks'))
+        #check stock
+        item_id = db.execute("SELECT ID FROM items WHERE Item = ? AND Version = ?", (item_name,version)).fetchall()
+        item_id = item_id[0][0]
+        if not item_id:
+            return render_template('stocks.html', message="Item not found")
+        quantity = db.execute("SELECT Quantity from size_and_stocks JOIN sizes ON size_and_stocks.size_id = sizes.ID WHERE item_id = ? AND sizes.Size = ?", (item_id, size)).fetchall()
+        quantity = quantity[0][0]
+        if quantity < 1:
+            flash("Out of stock")
+            return redirect(url_for('stocks'))
+        else:
+            db.execute(
+                "INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date) VALUES(?,?,?,?,?,?,DATETIME('now'))",
+                (item_name, size, version, customer, address, phone))
+            con.commit()
+            return redirect(url_for('stocks'))
+
+
     elif request.method == 'POST' and 'ship' in request.form:
 
         activity_id = request.form.get("txID")

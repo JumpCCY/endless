@@ -8,6 +8,15 @@
     <h1>stocks.html</h1>
 </header>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>
+                {% for message in messages %}
+                    alert("{{ message }}");
+                {% endfor %}
+            </script>
+        {% endif %}
+    {% endwith %}
 <a href="/">Home</a>
 <a href="/edit_item">Edit items</a>
 <a href="/activities">Activities</a>
@@ -15,8 +24,10 @@
 <div>
     <h2>Search item</h2>
     <input type="search" placeholder="Search item..." id="INDEX">
-    <table id ="table1">
-    </table>
+    <div id="results">
+        <table id ="table1">
+        </table>
+    </div>
 </div>
 
 <h2>Add txn</h2>
