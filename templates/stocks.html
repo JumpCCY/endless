@@ -8,15 +8,15 @@
     <h1>stocks.html</h1>
 </header>
 <body>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <script>
-                {% for message in messages %}
-                    alert("{{ message }}");
-                {% endfor %}
-            </script>
-        {% endif %}
-    {% endwith %}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <script>
+            {% for message in messages %}
+                alert("{{ message }}");
+            {% endfor %}
+        </script>
+    {% endif %}
+{% endwith %}
 <a href="/">Home</a>
 <a href="/edit_item">Edit items</a>
 <a href="/activities">Activities</a>
@@ -25,7 +25,7 @@
     <h2>Search item</h2>
     <input type="search" placeholder="Search item..." id="INDEX">
     <div id="results">
-        <table id ="table1">
+        <table id="table1">
         </table>
     </div>
 </div>
@@ -81,50 +81,60 @@
         </tbody>
 
     </table>
-<br>
- <button type="submit" name="submit_txn">Submit</button>
+    <br>
+    <button type="submit" name="submit_txn">Submit</button>
 </form>
 <br>
 <h2>Pending</h2>
 {% if not txn_query %}
-<p>No pending order</p>
+    <p>No pending order</p>
 {% else %}
-<table>
-    <thead>
-    <th>Status</th>
-    <th>Item</th>
-    <th>Size</th>
-    <th>Version</th>
-    <th>Customer name</th>
-    <th>Address</th>
-    <th>Phone number</th>
-    <th>Date</th>
-    <th>EDIT</th>
-    </thead>
-    <tbody>
-    {% for pending in txn_query %}
-        <tr>
-            <td>{{ pending.Status }}</td>
-            <td>{{ pending.Item }}</td>
-            <td>{{ pending.Size }}</td>
-            <td>{{ pending.Version }}</td>
-            <td>{{ pending.CustomerName }}</td>
-            <td>{{ pending.Address }}</td>
-            <td>{{ pending.PhoneNumber }}</td>
-            <td>{{ pending.Date }}</td>
-            <td><form method="POST">
-                <input type="hidden" name="txID" value="{{ pending.ID }}">
-                <button name="ship">Shipped ?</button>
-            </form>
-                <form method="POST">
-                <input type="hidden" name="txID" value="{{ pending.ID }}">
-                <button name="complete">Complete ?</button>
-            </form></td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+    <table id="pendingTable">
+        <thead>
+        <th>Status</th>
+        <th>Item</th>
+        <th>Size</th>
+        <th>Version</th>
+        <th>Customer name</th>
+        <th>Address</th>
+        <th>Phone number</th>
+        <th>Date</th>
+        <th>EDIT</th>
+        </thead>
+        <tbody id="tbody-status">
+        {% for pending in txn_query %}
+            {% if pending.Status == 'SHIPPED' or pending.Status == 'ORDERED' %}
+                <tr>
+                    <td>{{ pending.Status }}</td>
+                    <td>{{ pending.Item }}</td>
+                    <td>{{ pending.Size }}</td>
+                    <td>{{ pending.Version }}</td>
+                    <td>{{ pending.CustomerName }}</td>
+                    <td>{{ pending.Address }}</td>
+                    <td>{{ pending.PhoneNumber }}</td>
+                    <td>{{ pending.Date }}</td>
+                    <td>
+                        {% if pending.Status != "SHIPPED" %}
+                            <form method="POST">
+                                <input type="hidden" name="txID" value="{{ pending.ID }}">
+                                <button name="ship">Shipped ?</button>
+                            </form>
+                        {% endif %}
+                        <form method="POST">
+                            <input type="hidden" name="txID" value="{{ pending.ID }}">
+                            <button name="complete">Complete ?</button>
+                        </form>
+
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+
+        </tbody>
+    </table>
 {% endif %}
+
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

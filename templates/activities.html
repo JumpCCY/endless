@@ -8,6 +8,9 @@
     <h1>Activities.html</h1>
 </header>
 <body>
+{% if not activities %}
+<p>No activities found</p>
+{% else %}
 <table>
     <thead>
     <th>Status</th>
@@ -26,14 +29,15 @@
         <td>{{ activity.item }}</td>
         <td>{{ activity.size }}</td>
         <td>{{ activity.version }}</td>
-        <td>{{ activity.customer_name }}</td>
+        <td>{{ activity.CustomerName }}</td>
         <td>{{ activity.address }}</td>
-        <td>{{ activity.phone_number }}</td>
+        <td>{{ activity.PhoneNumber }}</td>
         <td>{{ activity.date }}</td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
+{% endif %}
 </body>
 <footer>
     <br>

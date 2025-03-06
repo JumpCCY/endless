@@ -178,5 +178,11 @@ let searchBox = document.getElementById("results");
     }
 });
 
+let tablest= document.getElementById("table-status");
+if (tablest.innerText === "") {
+    pTable = document.getElementById("pendingTable");
+    pTable.innerHTML = <p>No pending order</p>;
+}
+
 
 

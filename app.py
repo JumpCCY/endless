@@ -19,7 +19,12 @@ def hello_world():
 
 @app.route('/activities')
 def activities():
-    return render_template('activities.html')
+    con = sqlite3.connect("endless.db")
+    con.row_factory = sqlite3.Row
+    db = con.cursor()
+    activities = db.execute("SELECT * FROM activities ORDER BY Date").fetchall()
+
+    return render_template('activities.html', activities=activities)
 
 
 @app.route('/stocks', methods=['GET', 'POST'])
@@ -32,6 +37,7 @@ def stocks():
     activities = db.execute("SELECT * FROM activities").fetchall()
     size = db.execute("SELECT Size FROM sizes").fetchall()
 
+
     size_and_stocks = db.execute("SELECT * FROM size_and_stocks")
     if request.method == 'POST' and 'submit_txn' in request.form:
         item_name = request.form.get("item_name")
@@ -41,6 +47,7 @@ def stocks():
         address = request.form.get("address")
         phone = request.form.get("phone_no")
         phone = int(phone)
+
 
         if not item_name or not size or not version or not customer or not address or not phone:
             return render_template('stocks.html', message="Please fill out all the fields")
@@ -59,9 +66,11 @@ def stocks():
             flash("Out of stock")
             return redirect(url_for('stocks'))
         else:
+            item_id = db.execute("SELECT ID FROM items WHERE Item = ? AND Version = ?", (item_name, version)).fetchall()
+
             db.execute(
-                "INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date) VALUES(?,?,?,?,?,?,DATETIME('now'))",
-                (item_name, size, version, customer, address, phone))
+                "INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date, item_id) VALUES(?,?,?,?,?,?,DATETIME('now'),?)",
+                (item_name, size, version, customer, address, phone, item_id[0][0]))
             con.commit()
             return redirect(url_for('stocks'))
 
@@ -69,19 +78,32 @@ def stocks():
     elif request.method == 'POST' and 'ship' in request.form:
 
         activity_id = request.form.get("txID")
-        db.execute("UPDATE activities SET Status=? WHERE ID=?", ("SHIPPED", activity_id))
+        id = db.execute("SELECT * FROM activities WHERE ID = ?", (activity_id,)).fetchall()
+        db.execute("UPDATE activities SET Status = 'ORDER_done' WHERE ID = ?", (activity_id,))
+
+        db.execute("INSERT INTO activities(Status, Item,Size,Version,CustomerName,Address,PhoneNumber,Date,item_id) VALUES(?,?,?,?,?,?,?,DATETIME('now'), ?)" ,
+                   ("SHIPPED",id[0][2],id[0][3],id[0][4],id[0][5],id[0][6],id[0][7], id[0][9]))
+
         con.commit()
         return redirect(url_for('stocks'))
 
     elif request.method == 'POST' and 'complete' in request.form:
 
         activity_id = request.form.get("txID")
-        db.execute("UPDATE activities SET Status=? WHERE ID=?", ("COMPLETE", activity_id))
+        id = db.execute("SELECT * FROM activities WHERE ID = ?", (activity_id,)).fetchall()
+        db.execute("UPDATE activities SET Status = 'SHIP_done' WHERE ID = ?", (activity_id,))
+        db.execute(
+            "INSERT INTO activities(Status, Item,Size,Version,CustomerName,Address,PhoneNumber, Date, item_id) VALUES(?,?,?,?,?,?,?,DATETIME('now'), ?)",
+            ("COMPLETED", id[0][2], id[0][3], id[0][4], id[0][5], id[0][6], id[0][7], id[0][9]))
+
         con.commit()
         return redirect(url_for('stocks'))
 
     else:
-        txn_query = db.execute("SELECT * FROM activities WHERE Status = ? OR Status = ?", ("ORDERED", "SHIPPED",)).fetchall()
+        txn_query = db.execute("""
+        SELECT * FROM activities
+        WHERE Status <> ? 
+    """, ("COMPLETED",)).fetchall()
         return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities, size = size, txn_query=txn_query )
 
 
