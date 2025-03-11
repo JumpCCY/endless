@@ -86,9 +86,22 @@
 </form>
 <br>
 <h2>Pending</h2>
+
+
+{# using ns (namespace) because if using normal variable it will not be usable outside of if abd loop block #}
+
+{% set ns = namespace(ifPending=False) %}
+{% for pending in txn_query %}
+    {% if pending.Status == 'SHIPPED' or pending.Status == 'ORDERED' %}
+        {% set ns.ifPending = True %}
+    {% endif %}
+{% endfor %}
+
+
+
 {% if not txn_query %}
     <p>No pending order</p>
-{% else %}
+{% elif ns.ifPending %}
     <table id="pendingTable">
         <thead>
         <th>Status</th>
@@ -124,16 +137,15 @@
                             <input type="hidden" name="txID" value="{{ pending.ID }}">
                             <button name="complete">Complete ?</button>
                         </form>
-
                     </td>
                 </tr>
             {% endif %}
         {% endfor %}
-
         </tbody>
     </table>
+{% else %}
+    <p>No pending order</p>
 {% endif %}
-
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

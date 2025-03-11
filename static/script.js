@@ -177,12 +177,3 @@ let searchBox = document.getElementById("results");
         console.error('Error:', error);
     }
 });
-
-let tablest= document.getElementById("table-status");
-if (tablest.innerText === "") {
-    pTable = document.getElementById("pendingTable");
-    pTable.innerHTML = <p>No pending order</p>;
-}
-
-
-
