@@ -1,10 +1,7 @@
-from re import search
-from unittest.mock import DEFAULT
-
-import flask
-from flask import Flask, render_template, request, jsonify, flash, session, redirect, url_for
-import sqlite3
 import secrets
+import sqlite3
+
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
 
 app = Flask(__name__)
 
@@ -37,7 +34,6 @@ def stocks():
     activities = db.execute("SELECT * FROM activities").fetchall()
     size = db.execute("SELECT Size FROM sizes").fetchall()
 
-
     size_and_stocks = db.execute("SELECT * FROM size_and_stocks")
     if request.method == 'POST' and 'submit_txn' in request.form:
         item_name = request.form.get("item_name")
@@ -48,6 +44,20 @@ def stocks():
         phone = request.form.get("phone_no")
         phone = int(phone)
 
+        if size == 'XS':
+            sizeID = 1
+        elif size == 'S':
+            sizeID = 2
+        elif size == 'M':
+            sizeID = 3
+        elif size == 'L':
+            sizeID = 4
+        elif size == 'XL':
+            sizeID = 5
+        elif size == 'XXL':
+            sizeID = 6
+        else:
+            return render_template('stocks.html', message="invalid size")
 
         if not item_name or not size or not version or not customer or not address or not phone:
             return render_template('stocks.html', message="Please fill out all the fields")
@@ -55,19 +65,25 @@ def stocks():
         if phone <= 0:
             return render_template('stocks.html', message="Please enter the valid number")
 
-        #check stock
-        item_id = db.execute("SELECT ID FROM items WHERE Item = ? AND Version = ?", (item_name,version)).fetchall()
+        # check stock
+        item_id = db.execute("SELECT ID FROM items WHERE Item = ? AND Version = ?", (item_name, version)).fetchall()
         item_id = item_id[0][0]
         if not item_id:
             return render_template('stocks.html', message="Item not found")
-        quantity = db.execute("SELECT Quantity from size_and_stocks JOIN sizes ON size_and_stocks.size_id = sizes.ID WHERE item_id = ? AND sizes.Size = ?", (item_id, size)).fetchall()
+
+        quantity = db.execute(
+            "SELECT Quantity from size_and_stocks JOIN sizes ON size_and_stocks.size_id = sizes.ID WHERE item_id = ? AND sizes.Size = ?",
+            (item_id, size)).fetchall()
         quantity = quantity[0][0]
+
         if quantity < 1:
             flash("Out of stock")
             return redirect(url_for('stocks'))
         else:
             item_id = db.execute("SELECT ID FROM items WHERE Item = ? AND Version = ?", (item_name, version)).fetchall()
-
+            quantity = quantity - 1
+            db.execute("UPDATE size_and_stocks SET Quantity = ? WHERE item_id = ? AND size_id = ?",
+                       (quantity, item_id[0][0], sizeID))
             db.execute(
                 "INSERT INTO activities(Item,Size,Version,CustomerName,Address,PhoneNumber, Date, item_id) VALUES(?,?,?,?,?,?,DATETIME('now'),?)",
                 (item_name, size, version, customer, address, phone, item_id[0][0]))
@@ -81,8 +97,9 @@ def stocks():
         id = db.execute("SELECT * FROM activities WHERE ID = ?", (activity_id,)).fetchall()
         db.execute("UPDATE activities SET Status = 'ORDER_done' WHERE ID = ?", (activity_id,))
 
-        db.execute("INSERT INTO activities(Status, Item,Size,Version,CustomerName,Address,PhoneNumber,Date,item_id) VALUES(?,?,?,?,?,?,?,DATETIME('now'), ?)" ,
-                   ("SHIPPED",id[0][2],id[0][3],id[0][4],id[0][5],id[0][6],id[0][7], id[0][9]))
+        db.execute(
+            "INSERT INTO activities(Status, Item,Size,Version,CustomerName,Address,PhoneNumber,Date,item_id) VALUES(?,?,?,?,?,?,?,DATETIME('now'), ?)",
+            ("SHIPPED", id[0][2], id[0][3], id[0][4], id[0][5], id[0][6], id[0][7], id[0][9]))
 
         con.commit()
         return redirect(url_for('stocks'))
@@ -104,7 +121,8 @@ def stocks():
         SELECT * FROM activities
         WHERE Status <> ? 
     """, ("COMPLETED",)).fetchall()
-        return render_template('stocks.html', stocks=size_and_stocks , items = name_and_version, activities = activities, size = size, txn_query=txn_query )
+        return render_template('stocks.html', stocks=size_and_stocks, items=name_and_version, activities=activities,
+                               size=size, txn_query=txn_query)
 
 
 @app.route('/edit_item', methods=['GET', 'POST'])
@@ -120,7 +138,6 @@ def edit_items():
 
         items = db.execute("SELECT * FROM items").fetchall()
         size = db.execute("SELECT * FROM sizes").fetchall()
-
 
         # check of fake inputs
         if not item_name or not version or not price:
@@ -144,8 +161,6 @@ def edit_items():
                 flash('Name already taken')
                 return redirect(url_for('edit_items'))
 
-
-
         db.execute("INSERT INTO items(Item, Version, Price) VALUES(?,?,?)", (item_name, version, price,))
         item_id = db.lastrowid
         size_id = db.execute("SELECT sizes.ID FROM sizes").fetchall()
@@ -155,7 +170,6 @@ def edit_items():
                        (item_id, size[0], 0,))
 
         con.commit()
-
 
     if request.method == 'POST' and request.form.get("action") == "remove":
         item_id = request.form.get("item_id")
@@ -169,6 +183,7 @@ def edit_items():
     con.close()
     return render_template('edit_items.html', item=items, size=size)
 
+
 @app.route('/stock_check', methods=['GET'])
 def stock_check():
     con = sqlite3.connect("endless.db")
@@ -177,23 +192,23 @@ def stock_check():
 
     id_request = request.args.get("item_id")
 
-    rows = db.execute("SELECT item_id, size_id, Quantity FROM size_and_stocks WHERE item_id = ? ORDER BY size_id", (id_request,)).fetchall()
-    data = [{"item_id": row[0] , "size_id": row[1] , "quantity": row[2]} for row in rows]
+    rows = db.execute("SELECT item_id, size_id, Quantity FROM size_and_stocks WHERE item_id = ? ORDER BY size_id",
+                      (id_request,)).fetchall()
+    data = [{"item_id": row[0], "size_id": row[1], "quantity": row[2]} for row in rows]
     return jsonify(data)
+
 
 @app.route('/add_specific_size_quantity', methods=['GET'])
 def add_specific_size_quantity():
-
     size_id = request.args.get("size_id")
     item_id = request.args.get("item_id")
     adjustAmount = request.args.get("quantity")
 
     return update_stock(size_id, item_id, adjustAmount, True)
 
+
 @app.route('/remove_specific_size_quantity', methods=['GET'])
 def remove_specific_size_quantity():
-
-
     size_id = request.args.get("size_id")
     item_id = request.args.get("item_id")
     adjustAmount = request.args.get("quantity")
@@ -201,8 +216,7 @@ def remove_specific_size_quantity():
     return update_stock(size_id, item_id, adjustAmount, False)
 
 
-
-def update_stock(size_id, item_id, adjustAmount, is_addition = True):
+def update_stock(size_id, item_id, adjustAmount, is_addition=True):
     con = sqlite3.connect("endless.db")
     con.row_factory = sqlite3.Row
     db = con.cursor()
@@ -218,7 +232,8 @@ def update_stock(size_id, item_id, adjustAmount, is_addition = True):
     if adjustAmount <= 0:
         return jsonify({"error": "Invalid quantity format"}), 400
 
-    currentQuantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?", (size_id, item_id)).fetchone()
+    currentQuantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?",
+                                 (size_id, item_id)).fetchone()
 
     if is_addition:
         newQuantity = currentQuantity[0] + adjustAmount
@@ -227,22 +242,21 @@ def update_stock(size_id, item_id, adjustAmount, is_addition = True):
             return jsonify({"error": "Not enough stock to remove"}), 400
         newQuantity = currentQuantity[0] - adjustAmount
 
-
-    db.execute("UPDATE size_and_stocks SET Quantity = ? WHERE size_id = ? AND item_id = ?", (newQuantity,size_id,item_id))
+    db.execute("UPDATE size_and_stocks SET Quantity = ? WHERE size_id = ? AND item_id = ?",
+               (newQuantity, size_id, item_id))
     con.commit()
 
-    Quantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?", (size_id, item_id)).fetchone()
+    Quantity = db.execute("SELECT Quantity FROM size_and_stocks WHERE size_id = ? AND item_id = ?",
+                          (size_id, item_id)).fetchone()
     con.close()
     return str(Quantity[0])
 
 
 @app.route('/change_price', methods=['GET'])
 def change_price():
-
     item_id = request.args.get("item_id")
     price = request.args.get("price")
     version = request.args.get("version")
-
 
     if price is None or price == "":
         flash("Invalid Value")
@@ -274,9 +288,9 @@ def change_price():
 
     return jsonify(1)
 
+
 @app.route("/search")
 def search():
-
     con = sqlite3.connect("endless.db")
     con.row_factory = sqlite3.Row
     db = con.cursor()
@@ -298,8 +312,5 @@ def search():
     return jsonify(items_list)
 
 
-
 if __name__ == '__main__':
     app.run()
-
-

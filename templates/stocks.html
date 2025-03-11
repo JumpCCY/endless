@@ -35,8 +35,8 @@
     <table>
         <thead>
         <th>Item name</th>
-        <th>Size</th>
         <th>Version</th>
+        <th>Size</th>
         <th>Customer name</th>
         <th>Address</th>
         <th>Phone no.</th>
@@ -52,19 +52,20 @@
                     {% endfor %}
                 </select>
             </td>
-            <td>
-                <select name="size" required>
-                    <option selected="selected" value="">Select the size</option>
-                    {% for size in size %}
-                        <option value="{{ size.Size }}">{{ size.Size }}</option>
-                    {% endfor %}
-                </select>
-            </td>
+
             <td>
                 <select name="version" required>
                     <option selected="selected" value="">Select the version</option>
                     {% for version in items %}
                         <option value="{{ version.Version }}">{{ version.Version }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select name="size" required>
+                    <option selected="selected" value="">Select the size</option>
+                    {% for size in size %}
+                        <option value="{{ size.Size }}">{{ size.Size }}</option>
                     {% endfor %}
                 </select>
             </td>
