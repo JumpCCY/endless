@@ -19,7 +19,7 @@ def activities():
     con = sqlite3.connect("endless.db")
     con.row_factory = sqlite3.Row
     db = con.cursor()
-    activities = db.execute("SELECT * FROM activities ORDER BY Date").fetchall()
+    activities = db.execute("SELECT * FROM activities ORDER BY Date DESC ").fetchall()
 
     return render_template('activities.html', activities=activities)
 
@@ -298,19 +298,37 @@ def search():
     query = request.args.get("q")
     search_term = f"%{query}%"
 
-    # Modified query to handle both text and numeric searches
+    # Query for basic item information
     items = db.execute("""
-        SELECT Item, Version, Price 
-        FROM items 
-        WHERE Item LIKE ? COLLATE NOCASE 
-        OR Item = ?
-        OR CAST(Item AS TEXT) LIKE ? ORDER BY Version
+        SELECT items.ID, items.Item, items.Version, items.Price
+        FROM items
+        WHERE items.Item LIKE ? COLLATE NOCASE 
+        OR items.Item = ?
+        OR CAST(items.Item AS TEXT) LIKE ?
+        ORDER BY items.Version
     """, (search_term, query, search_term)).fetchall()
 
-    items_list = [dict(item) for item in items]
+    # Query for size quantities for these items
+    item_ids = tuple(item["ID"] for item in items)
+    size_quantities = db.execute("""
+        SELECT size_and_stocks.item_id, sizes.Size, size_and_stocks.Quantity 
+        FROM size_and_stocks
+        LEFT JOIN sizes ON size_and_stocks.size_id = sizes.ID
+        WHERE item_id IN ({})
+        ORDER BY item_id, size_id
+    """.format(",".join(["?"] * len(item_ids))), item_ids).fetchall()
 
-    return jsonify(items_list)
+    # Combine item data with size information
+    items_with_sizes = []
+    for item in items:
+        item_dict = dict(item)
+        item_dict["sizes"] = [dict(size) for size in size_quantities if size["item_id"] == item["ID"]]
+        items_with_sizes.append(item_dict)
+
+    return jsonify(items_with_sizes)
 
 
 if __name__ == '__main__':
     app.run()
+
+

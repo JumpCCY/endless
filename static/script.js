@@ -145,6 +145,7 @@ let searchBox = document.getElementById("results");
             searchBox.appendChild(h3);
         }
         else {
+            searchBox.innerHTML = "";
             // Create table header
             let table = document.createElement('table');
             let thead = document.createElement('thead');
@@ -167,6 +168,14 @@ let searchBox = document.getElementById("results");
             <td>${item.Price}</td> 
         `;
                 tbody.appendChild(row);
+
+                  // Create a second row for size details
+                let sizeRow = document.createElement("tr");
+                let sizeDetails = item.sizes.map(size => `Size ${size.Size}: ${size.Quantity}`).join(" | ");
+                sizeRow.innerHTML = `
+                    <td colspan="3" style="text-align: center;">${sizeDetails}</td>
+                `;
+                tbody.appendChild(sizeRow);
             });
             table.appendChild(tbody);
             searchBox.appendChild(table);
