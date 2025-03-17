@@ -82,24 +82,24 @@ function remove(item_id, size_id) {
     })
 }
 
-function editPriceButtonHandler(item_id, price, version) {
-    const element = document.getElementById(`price_${version}`);
-    const edit_button = document.getElementById(`edit_price_button_${version}`);
+function editPriceButtonHandler(item_id, price) {
+    const element = document.getElementById(`price_${item_id}`);
+    const edit_button = document.getElementById(`edit_price_button_${item_id}`);
 
     if (edit_button.innerHTML === `Cancel`) {
         element.innerHTML = price;
         edit_button.innerHTML = `Edit price`;
     } else {
         edit_button.innerHTML = `Cancel`;
-        element.innerHTML = `<input type="number" id="editInput_${item_id}_ver_${version}" value="" placeholder="New price" autofocus> <button type="button" onclick="editPrice(${item_id}, ${version})">Confirm</button>`;
+        element.innerHTML = `<input type="number" id="editInput_${item_id}" value="" placeholder="New price" autofocus> <button type="button" onclick="editPrice(${item_id})">Confirm</button>`;
 
     }
 }
 
-function editPrice(item_id, version) {
-    const new_price = document.getElementById(`editInput_${item_id}_ver_${version}`).value;
+function editPrice(item_id) {
+    const new_price = document.getElementById(`editInput_${item_id}`).value;
 
-    fetch(`/change_price?item_id=${item_id}&version=${version}&price=${new_price}`, {
+    fetch(`/change_price?item_id=${item_id}&price=${new_price}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'

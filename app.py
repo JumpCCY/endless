@@ -131,52 +131,65 @@ def edit_items():
     con.row_factory = sqlite3.Row
     db = con.cursor()
 
-    if request.method == 'POST' and request.form.get("action") == "add":
-        item_name = request.form.get("item_name")
-        version = request.form.get("version")
-        price = request.form.get("price")
+    # Handle form submission
+    if request.method == 'POST':
+        action = request.form.get("action")  # Get action from form
 
-        items = db.execute("SELECT * FROM items").fetchall()
-        size = db.execute("SELECT * FROM sizes").fetchall()
+        # If action is 'add', process item addition
+        if action == "add":
+            item_name = request.form.get("item_name")
+            version = request.form.get("version")
+            price = request.form.get("price")
 
-        # check of fake inputs
-        if not item_name or not version or not price:
-            flash('Please fill out all the fields')
-            return render_template('edit_items.html', item=items, size=size)
-
-        price = int(price)
-
-        if price < 0:
-            flash('Please enter the valid number')
-            return render_template('edit_items.html', item=items, size=size)
-
-        check_name = db.execute("SELECT Item FROM items WHERE Item = ?", (item_name,)).fetchone()
-        if check_name:
-            check_version = db.execute("SELECT Version FROM items WHERE Version = ?", (version,)).fetchone()
-
-            if not check_version:
-                check_version = 'no'
-
-            if item_name == check_name[0] and version == check_version[0]:
-                flash('Name already taken')
+            # Validate fields
+            if not item_name or not version or not price:
+                flash('Please fill out all the fields')
                 return redirect(url_for('edit_items'))
 
-        db.execute("INSERT INTO items(Item, Version, Price) VALUES(?,?,?)", (item_name, version, price,))
-        item_id = db.lastrowid
-        size_id = db.execute("SELECT sizes.ID FROM sizes").fetchall()
+            price = int(price)
 
-        for size in size_id:
-            db.execute("INSERT INTO size_and_stocks(item_id, size_id, Quantity) VALUES(?,?,?)",
-                       (item_id, size[0], 0,))
+            if price < 0:
+                flash('Please enter a valid number')
+                return redirect(url_for('edit_items'))
 
-        con.commit()
+            # Check if the item and version already exist
+            check_item = db.execute("SELECT * FROM items WHERE Item = ? AND Version = ?",
+                                    (item_name, version)).fetchone()
+            if check_item:
+                flash('Name and version already taken')
+                return redirect(url_for('edit_items'))
 
-    if request.method == 'POST' and request.form.get("action") == "remove":
-        item_id = request.form.get("item_id")
-        db.execute("DELETE FROM items WHERE ID = ?", item_id)
-        db.execute("DELETE FROM size_and_stocks WHERE item_id = ?", item_id)
-        con.commit()
+            # Insert the new item into the database
+            db.execute("INSERT INTO items(Item, Version, Price) VALUES(?,?,?)", (item_name, version, price))
+            item_id = db.lastrowid
 
+            # Insert stock info for each size
+            size_id = db.execute("SELECT sizes.ID FROM sizes").fetchall()
+            for size in size_id:
+                db.execute("INSERT INTO size_and_stocks(item_id, size_id, Quantity) VALUES(?,?,?)",
+                           (item_id, size[0], 0))
+
+            con.commit()
+            flash('Item added successfully')
+            return redirect(url_for('edit_items'))
+
+        # If action is 'remove', process item removal
+        elif action == "remove":
+            item_id = request.form.get("item_id")
+
+            # Validate item_id
+            if not item_id:
+                flash('Please provide a valid item ID to remove')
+                return redirect(url_for('edit_items'))
+
+            # Delete the item from the database
+            db.execute("DELETE FROM items WHERE ID = ?", (item_id,))
+            db.execute("DELETE FROM size_and_stocks WHERE item_id = ?", (item_id,))
+            con.commit()
+
+            return redirect(url_for('edit_items'))
+
+    # Fetch items and sizes to display
     items = db.execute("SELECT * FROM items ORDER BY Version").fetchall()
     size = db.execute("SELECT * FROM sizes").fetchall()
 
@@ -256,14 +269,10 @@ def update_stock(size_id, item_id, adjustAmount, is_addition=True):
 def change_price():
     item_id = request.args.get("item_id")
     price = request.args.get("price")
-    version = request.args.get("version")
 
     if price is None or price == "":
         flash("Invalid Value")
         return jsonify({"error": "Missing price"}), 400
-    if version is None or version == "":
-        flash("Invalid Value")
-        return jsonify({"error": "Missing version"}), 400
     if item_id is None or item_id == "":
         flash("Invalid Value")
         return jsonify({"error": "Missing item_id"}), 400
@@ -282,7 +291,7 @@ def change_price():
     con.row_factory = sqlite3.Row
     db = con.cursor()
 
-    db.execute("UPDATE items SET Price = ? WHERE Item = ? AND Version = ?", (price, item_id, version))
+    db.execute("UPDATE items SET Price = ? WHERE ID = ?", (price, item_id,))
     con.commit()
     con.close()
 
